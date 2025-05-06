@@ -90,7 +90,7 @@ function Dashboard() {
           body: JSON.stringify({ name }),
         }
       );
-      const data = response.json();
+      const data = await response.json();
       if (response.ok) {
         setProducts(products.filter((product) => product.name !== name));
         setMessage(data.message || "Product deleted successfully.");
@@ -104,14 +104,17 @@ function Dashboard() {
 
   const editProduct = async (name) => {
     try {
-      const response = await fetch({
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token,
-        },
-        method: "PUT",
-        body: JSON.stringify({ oldName: name, newName: editedName }),
-      });
+      const response = await fetch(
+        "http://localhost:5000/api/product/updateProduct",
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token,
+          },
+          method: "PUT",
+          body: JSON.stringify({ name, newName: editedName }),
+        }
+      );
       const data = await response.json();
       if (response.ok) {
         setProducts(
@@ -132,8 +135,47 @@ function Dashboard() {
     }
   };
 
+  const logout = () => {
+    localStorage.removeItem("token");
+    window.location.href = "/login";
+  };
+
+  const deleteUser = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/product/deleteUser",
+        {
+          headers: { Authorization: token },
+          method: "DELETE",
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage("User deleted successfully.");
+        logout();
+      } else {
+        setMessage(data.message || "Failed to delete user.");
+      }
+    } catch (error) {
+      setMessage("Failed to delete user.");
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto px-4">
+      <span className="absolute top-4 right-4 px-4 py-2 ">
+        <button
+          className="bg-red-600 text-white rounded mr-1"
+          onClick={deleteUser}
+        >
+          DeleteUser
+        </button>
+        <button className="bg-slate-600 text-white rounded" onClick={logout}>
+          LogOut
+        </button>
+      </span>
       <div className="pt-8 pb-4 mb-4 text-center text-5xl font-semibold text-slate-700">
         Welcome to your dashboard!
       </div>
@@ -174,14 +216,38 @@ function Dashboard() {
             {products.map((product, index) => (
               <tr key={product.id} className="border-t border-gray-200">
                 <td className="p-3 text-center">{index + 1}</td>
-                <td className="p-3 text-center">{product.name}</td>
                 <td className="p-3 text-center">
-                  <button
-                    className="text-yellow-600 rounded px-8 py-2"
-                    onClick={editProduct(product.name)}
-                  >
-                    Edit
-                  </button>
+                  {editingProductId === product.id ? (
+                    <input
+                      type="text"
+                      value={editedName}
+                      onChange={(e) => setEditedName(e.target.value)}
+                      className="border border-gray-300 px-2 py-1 rounded mr-2"
+                      placeholder="Enter new product name"
+                    />
+                  ) : (
+                    <span>{product.name}</span>
+                  )}
+                </td>
+                <td className="p-3 text-center">
+                  {editingProductId === product.id ? (
+                    <button
+                      className="text-blue-600  rounded px-10 py-2 ml-2"
+                      onClick={() => editProduct(product.name)}
+                    >
+                      Save
+                    </button>
+                  ) : (
+                    <button
+                      className="text-yellow-600 rounded px-8 py-2"
+                      onClick={() => {
+                        setEditingProductId(product.id);
+                        setEditedName(product.name);
+                      }}
+                    >
+                      Edit
+                    </button>
+                  )}
                   <button
                     className="text-red-600  rounded px-10 py-2 ml-2"
                     onClick={() => deleteProduct(product.name)}
