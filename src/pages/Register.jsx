@@ -18,8 +18,9 @@ function Register() {
       const data = await response.json();
 
       if (response.ok) {
+        localStorage.setItem("token", data.token);
         setMessage("Account created successfully!");
-        setTimeout(() => navigate("/"), 1000);
+        setTimeout(() => navigate("/dashboard"), 1000);
       } else {
         setMessage(data.message || "Registration failed.");
       }
